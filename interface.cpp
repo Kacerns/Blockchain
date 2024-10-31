@@ -1,87 +1,8 @@
 #include "einsteinhash.hpp"
-
-// class UTXO {
-// public:
-//     string tx_id;
-//     double amount;
-//     string owner;
-
-//     UTXO(const string& tx_id, double amount, const string& owner)
-//         : tx_id(tx_id), amount(amount), owner(owner) {
-//     }
-
-//     string to_string() const {
-//         ostringstream oss;
-//         oss << "UTXO(tx_id=" << tx_id << ", amount=" << amount << ", owner=" << owner << ")";
-//         return oss.str();
-//     }
-// };
-
-// class Transaction {
-// private:
-//     vector<UTXO> inputs;
-//     vector<UTXO> outputs;
-//     string tx_id;
-// public:
-//     Transaction(const vector<UTXO>& inputs, const vector<UTXO>& outputs)
-//         : inputs(inputs), outputs(outputs) {
-//         tx_id = calculate_hash();
-//     }
-
-//     string calculate_hash(){
-//         string tx_data = "";
-//         for (const auto& utxo : inputs) {
-//             tx_data += utxo.tx_id;
-//             tx_data += to_string(utxo.amount);
-//         }
-//         for (const auto& utxo : outputs) {
-//             tx_data += to_string(utxo.amount);
-//         }
-//         return HashFunction(tx_data);
-//     }
-
-//     void print_transaction() const {
-//         cout << "Transaction ID: " << tx_id << endl;
-//         cout << "Inputs:" << endl;
-//         for (const auto& utxo : inputs) {
-//             cout << "  - " << utxo.to_string() << endl;
-//         }
-//         cout << "Outputs:" << endl;
-//         for (const auto& utxo : outputs) {
-//             cout << "  - " << utxo.to_string() << endl;
-//         }
-//     }
-// };
-
-// class User{
-//     string name;
-//     string public_key;
-//     User(const string name, const string )
-//     double balance;
-// };
-
-// int main(int argc, const char *argv[]){
-
-//     UTXO utxo1("tx123", 5.0, "Alice");
-//     UTXO utxo2("tx124", 3.0, "Bob");
-
-//     vector<UTXO> inputs = { utxo1 };
-//     vector<UTXO> outputs = { utxo2 };
-
-//     Transaction transaction(inputs, outputs);
-//     transaction.print_transaction();
-
-//     return 0;
-// }
-
-#include <iostream>
-#include <vector>
 #include <unordered_map>
-#include <string>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <bitset>
 #include <random>
 
 using namespace std;
@@ -342,7 +263,7 @@ vector<Transaction> generate_transactions(const vector<User> &users, int target_
 }
 
 int main() {
-    Blockchain blockchain(5);
+    Blockchain blockchain(4);
     vector<User> users = generate_users(blockchain, 1000);
 
     cout << "Total Users Created: " << users.size() << endl;
