@@ -71,7 +71,7 @@ string HashFunction(string input){
             }
             equationBits.push_back(bitset<32>(tempBits));
         }
-        for(int i = 0; i<2; i++){
+        for(int i = 0; i<6; i++){
             bitset<32> extraBits;
             extraBits = rotr(equationBits.at(i), 10) ^ ~equationBits.at(i+1)>>10 ^ equationBits.at(i%8)<<8;
             equationBits.push_back(extraBits);
