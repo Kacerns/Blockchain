@@ -1,18 +1,4 @@
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
-#include <random>
-#include <mutex>
-#include <thread>
-#include <atomic>
-#include <algorithm>
 #include "einsteinhash.hpp"
-
-using namespace std;
 
 class UTXO {
 public:
@@ -69,7 +55,6 @@ public:
         }
         tx_id = calculate_hash();
     }
-
     string calculate_hash() {
         string tx_data;
         for (const auto &utxo : inputs)
@@ -93,12 +78,12 @@ public:
 
 class Block {
 public:
+    string merkle_root;
+    int nonce = 0;
     string prev_hash;
     string timestamp;
     vector<Transaction> transactions;
-    string merkle_root;
     bool hash_found = false;
-    int nonce = 0;
     int difficulty;
     string block_hash;
 
@@ -154,12 +139,13 @@ public:
     }
 };
 
-class Blockchain {
+class Blockchain{
+private:
+    unordered_map<string, vector<UTXO>> utxo_pool;
+    vector<Block> chain;
 public:
     int difficulty;
-    unordered_map<string, vector<UTXO>> utxo_pool;
     vector<Block> block_candidates;
-    vector<Block> chain;
     vector<Transaction> pending_transactions;
 
     Blockchain(int difficulty) : difficulty(difficulty) {
@@ -173,11 +159,6 @@ public:
         utxo_pool[genesis_utxo.tx_id].push_back(genesis_utxo);
         return Block("0", {genesis_tx}, difficulty);
     }
-    // void add_block_manual(const vector<Transaction> &transactions) {
-    //     string prev_hash = chain.back().block_hash;
-    //     Block new_block(prev_hash, transactions, difficulty);
-    //     chain.push_back(new_block);
-    // }
     void add_transaction(const Transaction &transaction) {
         bool valid = true;
         for (const auto &input : transaction.inputs) {
@@ -312,9 +293,13 @@ public:
              mine_block_candidates();
         }
     }
+    unordered_map<string, vector<UTXO>> get_utxo_pool_copy(){
+        return utxo_pool;
+    }
+    void set_utxo_pool(unordered_map<string, vector<UTXO>> &utxo_pool_copy){
+        utxo_pool = utxo_pool_copy;
+    }
 };
-
-// all good
 class User {
 private:
     string name;
@@ -327,9 +312,10 @@ public:
     int get_balance(const Blockchain &blockchain) const {
         return blockchain.get_user_balance(public_key);
     }
-    vector<UTXO> get_user_utxos(const Blockchain &blockchain) const {
+    vector<UTXO> get_user_utxos(Blockchain &blockchain) const {
+        unordered_map<string, vector<UTXO>> utxo_pool_copy = blockchain.get_utxo_pool_copy();
         vector<UTXO> user_utxo;
-        for (const auto &pair : blockchain.utxo_pool) {
+        for (const auto &pair : utxo_pool_copy) {
             if(!pair.second.empty()){
                 if (pair.second.at(0).owner == this->public_key) {
                     for(const auto Utxos: pair.second){user_utxo.push_back(Utxos);}
@@ -339,9 +325,8 @@ public:
         return user_utxo;
     }
 };
-
-// all good
  vector<User> generate_users(Blockchain &blockchain, int num_users) {
+    unordered_map<string, vector<UTXO>> utxo_pool_copy = blockchain.get_utxo_pool_copy();
     vector<User> users;
     random_device rd;
     mt19937 gen(rd());
@@ -353,14 +338,13 @@ public:
 
         int balance = dist(gen);
         UTXO initial_utxo("utxo_" + user.public_key.substr(0, 6), balance, user.public_key);
-        blockchain.utxo_pool[initial_utxo.tx_id].push_back(initial_utxo);
+        utxo_pool_copy[initial_utxo.tx_id].push_back(initial_utxo);
 
         users.push_back(user);
     }
+    blockchain.set_utxo_pool(utxo_pool_copy);
     return users;
 }
-
-// all good
 vector<Transaction> generate_transactions(Blockchain &blockchain, const vector<User> &users, int target_num_transactions) {
     vector<Transaction> transactions;
     random_device rd;
@@ -397,6 +381,41 @@ vector<Transaction> generate_transactions(Blockchain &blockchain, const vector<U
     }
     return transactions;
 }
+Transaction make_transaction(User &sender,User &receiver, int amount, Blockchain &blockchain){
+        vector<UTXO> inputs;
+        vector<UTXO> outputs;
+        int sender_coin = 0;
+        vector<UTXO> sender_utxos = sender.get_user_utxos(blockchain);
+        int locator;
+
+
+        while (sender_coin < amount && !sender_utxos.empty()){
+            UTXO filter;
+            for(int i = 0; i<=sender_utxos.size()-1; i++){
+                if(sender_utxos.at(i).amount > filter.amount){
+                    filter = sender_utxos.at(i);
+                    locator = i;
+                }
+            }
+            sender_utxos.erase(sender_utxos.begin()+locator);
+            sender_coin += filter.amount;
+            inputs.push_back(filter);
+        }
+        switch (sender_coin > amount){
+        case false:
+            if(sender_coin == amount){
+                UTXO transaction_utxo(amount, receiver.public_key);
+                outputs.push_back(transaction_utxo);
+                break;
+            }
+            break;
+        default:
+            UTXO transaction_utxo(amount, receiver.public_key);
+            outputs.push_back(transaction_utxo);
+            break;
+        }
+        return Transaction(inputs, outputs);
+}
 
 int main() {
     Blockchain blockchain(2);
@@ -404,24 +423,32 @@ int main() {
 
     cout << "Total Users Created: " << users.size() << endl;
 
-    vector<Transaction> transactions = generate_transactions(blockchain, users, 1000);
+    vector<Transaction> transactions = generate_transactions(blockchain, users, 10000);
     cout << "Total Transactions Created: " << transactions.size() << endl;
 
     for (const auto &tx : transactions) {
         blockchain.add_transaction(tx);
     }
+    
+    blockchain.Launch();
+    blockchain.print_block(100);
 
 
-    Blockchain local_blockchain(2);
-    User Tom("Tom");
-    UTXO initial_utxo("utxo_" + Tom.public_key.substr(0, 6), 2, Tom.public_key);
-    local_blockchain.utxo_pool[initial_utxo.tx_id].push_back(initial_utxo);
-    UTXO initial_utxo2("utxo_" + Tom.public_key.substr(0, 6), 2, Tom.public_key);
-    local_blockchain.utxo_pool[initial_utxo2.tx_id].push_back(initial_utxo);
-    User Jerry("Jerry");
-    local_blockchain.Launch();
+    // Blockchain local_blockchain(2);
+    // unordered_map<string, vector<UTXO>> utxo_pool_copy = blockchain.get_utxo_pool_copy();
+    // User Tom("Tom");
+    // UTXO initial_utxo("utxo_" + Tom.public_key.substr(0, 6), 2, Tom.public_key);
+    // utxo_pool_copy[initial_utxo.tx_id].push_back(initial_utxo);
+    // UTXO initial_utxo2("utxo_" + Tom.public_key.substr(0, 6), 3, Tom.public_key);
+    // utxo_pool_copy[initial_utxo2.tx_id].push_back(initial_utxo2);
+    // local_blockchain.set_utxo_pool(utxo_pool_copy);
 
-    blockchain.print_block(0);
+    // User Jerry("Jerry");
+    // Transaction Test = make_transaction(Tom, Jerry, 3, local_blockchain);
+    // Test.print_transaction();
+    // local_blockchain.add_transaction(Test);
+    // local_blockchain.Launch();
+    // local_blockchain.print_block(1);
 
     return 0;
 }

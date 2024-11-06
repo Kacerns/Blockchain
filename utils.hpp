@@ -10,6 +10,12 @@
 #include <sstream>
 #include <random>
 #include <chrono>
+#include <string>
+#include <unordered_map>
+#include <ctime>
+#include <mutex>
+#include <thread>
+#include <atomic>
 
 using namespace std;
 using namespace std::chrono;
