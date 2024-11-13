@@ -14,6 +14,7 @@ This project simulates a blockchain in c++ using a UTXO transaction model and mu
   - [print_transaction](#print_transaction)
   - [print_block](#print_block)
 - [Example_Outputs](#example)
+- [EXTRA_TASKS_(3_Lab)](#extra_tasks)
 
 ## Installation
 1. Clone or download this repository.
@@ -76,3 +77,29 @@ Usage: Prints details of a specified block, including its hash, previous hash, m
 ![alt text](images/image-2.png)
 ### Printing last block details
 ![alt text](images/image-1.png)
+
+## Extra Tasks
+### Task 2 Installing a bitcoin core
+Installing a bitcoin core was relatively simple. Just a few setup steps and then a hellish time of waiting.
+#### Launching the app
+![alt text](images/image-6.png)
+#### Download time
+![alt text](images/image-7.png)
+#### Using the console
+![alt text](images/image-8.png)
+#### getblockchaininfo
+![alt text](images/image-9.png)
+note: This has wrong data because the node is not fully synced
+#### Peer to peer communication verification
+![alt text](images/image-10.png)
+#### Connecting to this node
+The config file has the rpc server configurated and the server flag set to 1, which means if needed I can share the ip adress of the node server and let people connect by using a premade password.
+### Task 3 Bitcoin network analysis using python-bitcoinlib
+Here are the files used for the bitcoin network analysis, including 2 extra tasks.
+![alt text](images/image-11.png)
+#### 1. ![alt text](images/image-12.png)
+#### 2. ![alt text](images/image-21.png)
+#### 3. ![alt text](images/image-3.png)
+#### 4. ![alt text](images/image-4.png)
+#### 5. ![alt text](images/image-5.png)
+
