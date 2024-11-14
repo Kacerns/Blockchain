@@ -160,15 +160,16 @@ public:
         return Block("0", {genesis_tx}, difficulty);
     }
     void add_transaction(const Transaction &transaction) {
-        bool valid = true;
+        bool validator = true;
         for (const auto &input : transaction.inputs) {
             if (utxo_pool.find(input.tx_id) == utxo_pool.end()) {
-                valid = false;
+                validator = false;
                 break;
             }
         }
-        if (valid) {
+        if (validator) {
             if(transaction.valid == true){
+                cout<<transaction.valid<<endl;
                 pending_transactions.push_back(transaction);
             }
         }
@@ -401,54 +402,49 @@ Transaction make_transaction(User &sender,User &receiver, int amount, Blockchain
             sender_coin += filter.amount;
             inputs.push_back(filter);
         }
-        switch (sender_coin > amount){
-        case false:
-            if(sender_coin == amount){
-                UTXO transaction_utxo(amount, receiver.public_key);
-                outputs.push_back(transaction_utxo);
-                break;
-            }
-            break;
-        default:
-            UTXO transaction_utxo(amount, receiver.public_key);
-            outputs.push_back(transaction_utxo);
-            break;
+        if(sender_coin < amount){
+            Transaction Result(inputs,outputs);
+            Result.valid = false;
+            return Result;
         }
-        return Transaction(inputs, outputs);
+        UTXO transaction_utxo(amount, receiver.public_key);
+        outputs.push_back(transaction_utxo);
+        Transaction Result(inputs,outputs);
+        return Result;
 }
 
 int main() {
-    Blockchain blockchain(2);
-    vector<User> users = generate_users(blockchain, 1000);
+    // Blockchain blockchain(2);
+    // vector<User> users = generate_users(blockchain, 1000);
 
-    cout << "Total Users Created: " << users.size() << endl;
+    // cout << "Total Users Created: " << users.size() << endl;
 
-    vector<Transaction> transactions = generate_transactions(blockchain, users, 10000);
-    cout << "Total Transactions Created: " << transactions.size() << endl;
+    // vector<Transaction> transactions = generate_transactions(blockchain, users, 10000);
+    // cout << "Total Transactions Created: " << transactions.size() << endl;
 
-    for (const auto &tx : transactions) {
-        blockchain.add_transaction(tx);
-    }
+    // for (const auto &tx : transactions) {
+    //     blockchain.add_transaction(tx);
+    // }
     
-    blockchain.Launch();
-    blockchain.print_block(100);
+    // blockchain.Launch();
+    // blockchain.print_block(100);
 
 
-    // Blockchain local_blockchain(2);
-    // unordered_map<string, vector<UTXO>> utxo_pool_copy = blockchain.get_utxo_pool_copy();
-    // User Tom("Tom");
-    // UTXO initial_utxo("utxo_" + Tom.public_key.substr(0, 6), 2, Tom.public_key);
-    // utxo_pool_copy[initial_utxo.tx_id].push_back(initial_utxo);
-    // UTXO initial_utxo2("utxo_" + Tom.public_key.substr(0, 6), 3, Tom.public_key);
-    // utxo_pool_copy[initial_utxo2.tx_id].push_back(initial_utxo2);
-    // local_blockchain.set_utxo_pool(utxo_pool_copy);
+    Blockchain local_blockchain(2);
+    unordered_map<string, vector<UTXO>> utxo_pool_copy = local_blockchain.get_utxo_pool_copy();
+    User Tom("Tom");
+    UTXO initial_utxo("utxo_" + Tom.public_key.substr(0, 6), 2, Tom.public_key);
+    utxo_pool_copy[initial_utxo.tx_id].push_back(initial_utxo);
+    UTXO initial_utxo2("utxo_" + Tom.public_key.substr(0, 6), 3, Tom.public_key);
+    utxo_pool_copy[initial_utxo2.tx_id].push_back(initial_utxo2);
+    local_blockchain.set_utxo_pool(utxo_pool_copy);
 
-    // User Jerry("Jerry");
-    // Transaction Test = make_transaction(Tom, Jerry, 3, local_blockchain);
-    // Test.print_transaction();
-    // local_blockchain.add_transaction(Test);
-    // local_blockchain.Launch();
-    // local_blockchain.print_block(1);
+    User Jerry("Jerry");
+    Transaction Test = make_transaction(Tom, Jerry, 6, local_blockchain);
+    Test.print_transaction();
+    local_blockchain.add_transaction(Test);
+    local_blockchain.Launch();
+    local_blockchain.print_block(1);
 
     return 0;
 }
